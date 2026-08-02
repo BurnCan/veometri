@@ -51,7 +51,8 @@ target_link_libraries(veometri_core PUBLIC glm::glm PRIVATE ${veometri_first_par
 
 add_library(Veometri::Core ALIAS veometri_core)
 
-add_library(veometri_io src/io/GeometryData.cpp src/io/GeometryFileFormat.cpp src/io/GeometryFileService.cpp)
+add_library(veometri_io src/io/GeometryData.cpp src/io/GeometryArrayTextFormat.cpp
+    src/io/GeometryFileFormat.cpp src/io/GeometryFileService.cpp)
 target_include_directories(veometri_io PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(veometri_io PUBLIC veometri_core PRIVATE nlohmann_json::nlohmann_json ${veometri_first_party})
 
@@ -88,6 +89,7 @@ if(BUILD_TESTING AND VEOMETRI_BUILD_TESTS)
     veometri_test(mesh_selection_tests tests/MeshSelectionTests.cpp veometri_core)
     veometri_test(mesh_document_tests tests/MeshDocumentTests.cpp veometri_core)
     veometri_test(geometry_file_format_tests tests/GeometryFileFormatTests.cpp veometri_io)
+    veometri_test(geometry_array_text_format_tests tests/GeometryArrayTextFormatTests.cpp veometri_io)
     veometri_test(geometry_file_service_tests tests/GeometryFileServiceTests.cpp veometri_io)
     veometri_test(mesh_picker_tests tests/MeshPickerTests.cpp veometri_core)
     veometri_test(vertex_drag_manipulator_tests tests/VertexDragManipulatorTests.cpp veometri_core)
@@ -98,6 +100,7 @@ if(BUILD_TESTING AND VEOMETRI_BUILD_TESTS)
     target_compile_definitions(asset_locator_tests PRIVATE
         VEOMETRI_TEST_DEVELOPMENT_ASSET_ROOT="${PROJECT_SOURCE_DIR}/assets")
     target_compile_definitions(geometry_file_format_tests PRIVATE VEOMETRI_EXAMPLE_FILE="${PROJECT_SOURCE_DIR}/examples/cube.geo")
+    target_compile_definitions(geometry_file_service_tests PRIVATE VEOMETRI_EXAMPLE_FILE="${PROJECT_SOURCE_DIR}/examples/cube.geo")
     find_package(Python3 COMPONENTS Interpreter)
     if(Python3_Interpreter_FOUND)
         add_test(NAME standalone_independence COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/check_standalone_independence.py)

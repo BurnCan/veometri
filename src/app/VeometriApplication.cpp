@@ -234,7 +234,9 @@ private:
                 break;
             }
             case sculpt::VeometriUi::FileAction::SaveDocument:
-                if (m_tool->currentDocumentPath()) m_tool->saveDocument(*m_tool->currentDocumentPath());
+                if (m_tool->currentDocumentPath() &&
+                    m_tool->currentDocumentPath()->extension() == ".txt")
+                    m_tool->saveDocument(*m_tool->currentDocumentPath());
                 else saveAs();
                 break;
             case sculpt::VeometriUi::FileAction::SaveDocumentAs:
@@ -253,12 +255,12 @@ private:
 
     void saveAs()
     {
-        auto selected = pfd::save_file("Save geometry", "untitled.geo",
-            {"Veometri Geometry (*.geo)", "*.geo"}).result();
+        auto selected = pfd::save_file("Save geometry", "untitled.txt",
+            {"Vertex and Index Arrays (*.txt)", "*.txt"}).result();
         if (selected.empty()) return;
         std::filesystem::path path(selected);
-        if (!path.has_extension()) path += ".geo";
-        else if (path.extension() != ".geo") path.replace_extension(".geo");
+        if (!path.has_extension()) path += ".txt";
+        else if (path.extension() != ".txt") path.replace_extension(".txt");
         m_tool->saveDocument(path);
     }
 
