@@ -1,5 +1,6 @@
 #include "veometri/io/GeometryFileService.h"
 
+#include "veometri/io/GeometryArrayTextFormat.h"
 #include "veometri/io/GeometryFileFormat.h"
 
 #include <fstream>
@@ -37,11 +38,11 @@ GeometryFileService::SaveResult GeometryFileService::save(
     const std::filesystem::path& path, const sculpt::SculptMesh& mesh)
 {
     auto destination = path;
-    if (!destination.has_extension()) destination += ".geo";
-    else if (destination.extension() != ".geo")
-        return {false, "Geometry save path must use the .geo extension."};
+    if (!destination.has_extension()) destination += ".txt";
+    else if (destination.extension() != ".txt")
+        return {false, "Geometry save path must use the .txt extension."};
     std::string text;
-    try { text = GeometryFileFormat::encode(buildGeometryData(mesh)); }
+    try { text = GeometryArrayTextFormat::encode(buildGeometryData(mesh)); }
     catch (const std::exception& error) { return {false, error.what()}; }
     auto temporary = destination;
     temporary += ".tmp";

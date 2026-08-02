@@ -6,7 +6,9 @@ Veometri is a real-time visual authoring tool for indexed 3D geometry. Veometri 
 
 ## Portable geometry format
 
-`.geo` is Veometri’s portable, PrimitiveLab-compatible indexed triangle format. Version 2 stores a position, normal, and texture coordinate for every vertex plus a `uint32` index buffer.
+`.txt` is Veometri's default, language-neutral save/export format. It contains a flat
+interleaved vertex array and a flat index array, ready to paste into many programming
+languages without a JSON parser. Existing `.geo` and `.meshgeo` files remain readable.
 
 ## Capabilities
 
@@ -43,27 +45,34 @@ Installation places the executable in `bin`, shaders in `share/veometri/shaders`
 
 `Tab` toggles camera/edit mode. Mouse look and `W/S/A/D/Q/E` move the camera. Left click selects or drags a vertex; `Delete` removes the selected triangle. Menus manage documents.
 
-## `.geo` format
+## Default `.txt` array format
 
-Version 2 is deterministic, readable JSON identified by `format: veometri-geometry`, `version: 2`, and `primitive: triangles`. Coordinates are finite JSON numbers representable as floats. Each consecutive index triple is a triangle; counterclockwise winding determines its normal direction. The file maps directly to PrimitiveLab's `Vertex { position, normal, texCoord }` and indexed `MeshData`, without editor or rendering state.
+The file consists of exactly two brace-delimited arrays (with no language-specific
+declarations). The first has one vertex per line and a stride of 8 floats in
+`position3, normal3, texCoord2` order. The second contains zero-based,
+`uint32`-compatible indices, with one triangle per line. For example:
 
-```json
+```cpp
+// positions          // normals           // texcoords
 {
-  "format": "veometri-geometry",
-  "version": 2,
-  "primitive": "triangles",
-  "vertices": [
-    { "position": [0.0, 0.5, 0.0], "normal": [0.0, 0.0, 1.0], "texCoord": [0.5, 1.0] },
-    { "position": [-0.5, -0.5, 0.0], "normal": [0.0, 0.0, 1.0], "texCoord": [0.0, 0.0] },
-    { "position": [0.5, -0.5, 0.0], "normal": [0.0, 0.0, 1.0], "texCoord": [1.0, 0.0] }
-  ],
-  "indices": [0, 1, 2]
-}
+    0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.5f, 1.0f,
+    -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+    0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f
+};
+
+{
+    0, 1, 2
+};
 ```
 
 Because the sculpt editor authors positions and topology, export generates area-weighted smooth normals. Degenerate or unused vertices receive the deterministic `(0, 1, 0)` fallback. Hard edges require duplicated indexed vertices. UVs are generated fallback data: positions are projected onto the two axes with greatest mesh extent and normalized to `[0, 1]`; they are not an authored unwrap. Loading into the editor currently discards decoded normals and UVs, while preserving positions, indices, and editing behavior.
 
-Legacy version 1 `indexed-geometry` JSON (including `.meshgeo` files selected through the legacy open filter) remains readable and receives the same generated normals and UVs. All saves emit version 2 `.geo`; an extensionless service path gains `.geo`, while another extension is rejected. See `examples/cube.geo` for a complete mesh.
+`.geo` version 2 and legacy version 1 `indexed-geometry` JSON (including
+`.meshgeo`) remain readable and receive the same generated normals and UVs. Saving uses
+`.txt`; an extensionless service path gains `.txt`, while another extension is rejected.
+After opening a legacy `.geo` or `.meshgeo`, **Save** opens **Save As** rather than
+overwriting the source with text-array syntax. Once saved, the new `.txt` path becomes
+the document's current path.
 
 ## Architecture and dependencies
 
