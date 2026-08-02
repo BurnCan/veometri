@@ -95,6 +95,8 @@ if(BUILD_TESTING AND VEOMETRI_BUILD_TESTS)
     veometri_test(mesh_editor_state_tests tests/MeshEditorTextStateTests.cpp veometri_core)
     veometri_test(mesh_overlay_data_tests tests/MeshOverlayDataTests.cpp veometri_core)
     veometri_test(asset_locator_tests tests/AssetLocatorTests.cpp veometri_platform)
+    target_compile_definitions(asset_locator_tests PRIVATE
+        VEOMETRI_TEST_DEVELOPMENT_ASSET_ROOT="${PROJECT_SOURCE_DIR}/assets")
     target_compile_definitions(geometry_file_format_tests PRIVATE VEOMETRI_EXAMPLE_FILE="${PROJECT_SOURCE_DIR}/examples/cube.meshgeo")
     find_package(Python3 COMPONENTS Interpreter)
     if(Python3_Interpreter_FOUND)

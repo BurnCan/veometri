@@ -27,6 +27,11 @@ int main()
     check(cube.triangleCount() == 12, "default cube triangle count");
     check(cube.isValid(), "default cube validity");
 
+    auto vertexOnly = SculptMesh::create({{0.0f, 0.0f, 0.0f}, {1.0f, 2.0f, 3.0f}}, {});
+    check(vertexOnly.success && vertexOnly.mesh.isValid() && vertexOnly.mesh.vertexCount() == 2 &&
+              vertexOnly.mesh.triangleCount() == 0,
+          "internal creation permits a valid vertex-only mesh");
+
     SculptMesh mesh;
     const auto valid = mesh.replaceFromText("0 0 0\n1 0 0\n0 1 0\n", "0 1 2\n");
     check(valid.success && mesh.vertexCount() == 3 && mesh.triangleCount() == 1,

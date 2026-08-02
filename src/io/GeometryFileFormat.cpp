@@ -44,9 +44,9 @@ GeometryFileFormat::DecodeResult GeometryFileFormat::decode(std::string_view tex
 {
     Json root;
     try { root = Json::parse(text.begin(), text.end()); }
-    catch (const Json::parse_error& error)
+    catch (const Json::exception& error)
     {
-        return {false, {}, "Malformed JSON: " + std::string(error.what())};
+        return {false, {}, "Malformed or out-of-range JSON: " + std::string(error.what())};
     }
     if (!root.is_object()) return {false, {}, "Expected top-level JSON object."};
     for (const char* field : {"format", "version", "primitive", "vertices", "indices"})
