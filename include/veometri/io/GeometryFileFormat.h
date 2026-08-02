@@ -3,7 +3,7 @@
 #include <string>
 #include <string_view>
 
-#include "veometri/sculpt/SculptMesh.h"
+#include "veometri/io/GeometryData.h"
 
 namespace veometri::io {
 
@@ -13,11 +13,11 @@ public:
     struct DecodeResult
     {
         bool success = false;
-        sculpt::SculptMesh mesh;
+        GeometryData geometry;
         std::string error;
     };
 
-    static std::string encode(const sculpt::SculptMesh& mesh);
+    static std::string encode(const GeometryData& geometry);
     static DecodeResult decode(std::string_view text);
 };
 
