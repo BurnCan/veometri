@@ -3,8 +3,12 @@
 #include "veometri/render/Camera.h"
 
 #include <cmath>
+#include <cstdint>
 #include <cstdlib>
+#include <initializer_list>
 #include <iostream>
+#include <utility>
+#include <vector>
 #include <glm/gtc/matrix_transform.hpp>
 
 using namespace veometri::sculpt;
@@ -17,11 +21,18 @@ void check(bool condition, const char* message)
 }
 bool near(float a, float b, float epsilon = 1.0e-4f) { return std::abs(a - b) < epsilon; }
 
-SculptMesh meshFrom(const char* vertices, const char* indices = "")
+SculptMesh meshFromGeometry(std::initializer_list<glm::vec3> vertices,
+                            std::initializer_list<std::uint32_t> indices)
 {
-    SculptMesh mesh;
-    check(mesh.replaceFromText(vertices, indices).success, "mesh fixture parses");
-    return mesh;
+    auto created = SculptMesh::create(std::vector<glm::vec3>(vertices),
+                                      std::vector<std::uint32_t>(indices));
+    check(created.success, "mesh fixture construction succeeds");
+    return std::move(created.mesh);
+}
+
+SculptMesh meshFromVertices(std::initializer_list<glm::vec3> vertices)
+{
+    return meshFromGeometry(vertices, {});
 }
 
 class TestCamera final : public veometri::render::Camera
@@ -46,30 +57,34 @@ int main()
     const MeshPicker picker;
     const Ray forward{{0, 0, 0}, {0, 0, -1}};
 
-    SculptMesh vertices = meshFrom("0.05 0 -2\n0.2 0 -1\n0 0 1\n0.05 0 -1");
+    SculptMesh vertices = meshFromVertices({{0.05f, 0, -2}, {0.2f, 0, -1}, {0, 0, 1}, {0.05f, 0, -1}});
     check(picker.pickVertex(vertices, forward) == 0, "nearby vertex selected by perpendicular ray distance");
-    SculptMesh distant = meshFrom("0.2 0 -1");
+    SculptMesh distant = meshFromVertices({{0.2f, 0, -1}});
     check(!picker.pickVertex(distant, forward), "distant vertex rejected");
-    SculptMesh behind = meshFrom("0 0 1");
+    SculptMesh behind = meshFromVertices({{0, 0, 1}});
     check(!picker.pickVertex(behind, forward), "vertex behind origin rejected");
-    SculptMesh closestRadius = meshFrom("0.08 0 -1\n0.02 0 -4");
+    SculptMesh closestRadius = meshFromVertices({{0.08f, 0, -1}, {0.02f, 0, -4}});
     check(picker.pickVertex(closestRadius, forward) == 1, "smallest perpendicular distance wins");
-    SculptMesh tie = meshFrom("0.05 0 -1\n-0.05 0 -2");
+    SculptMesh tie = meshFromVertices({{0.05f, 0, -1}, {-0.05f, 0, -2}});
     check(picker.pickVertex(tie, forward) == 0, "vertex tie favors first ordinal");
     MeshPicker wide({0.25f, 0.0f, 1.0e-7f});
     check(wide.pickVertex(distant, forward) == 0, "configured vertex radius honored");
 
-    SculptMesh triangle = meshFrom("-1 -1 -2\n1 -1 -2\n0 1 -2", "0 1 2");
+    SculptMesh triangle = meshFromGeometry({{-1, -1, -2}, {1, -1, -2}, {0, 1, -2}}, {0, 1, 2});
     check(picker.pickTriangle(triangle, forward) == 0, "ray hits triangle");
     check(!picker.pickTriangle(triangle, {{2, 2, 0}, {0, 0, -1}}), "ray misses triangle");
     check(!picker.pickTriangle(triangle, {{0, 0, -3}, {0, 0, -1}}), "hit behind origin rejected");
-    SculptMesh two = meshFrom("-1 -1 -4\n1 -1 -4\n0 1 -4\n-1 -1 -2\n1 -1 -2\n0 1 -2", "0 1 2\n3 4 5");
+    SculptMesh two = meshFromGeometry(
+        {{-1, -1, -4}, {1, -1, -4}, {0, 1, -4}, {-1, -1, -2}, {1, -1, -2}, {0, 1, -2}},
+        {0, 1, 2, 3, 4, 5});
     check(picker.pickTriangle(two, forward) == 1, "nearest triangle selected and ordinal returned");
-    SculptMesh ordinal = meshFrom("10 10 -1\n11 10 -1\n10 11 -1\n-1 -1 -3\n1 -1 -3\n0 1 -3", "0 1 2\n3 4 5");
+    SculptMesh ordinal = meshFromGeometry(
+        {{10, 10, -1}, {11, 10, -1}, {10, 11, -1}, {-1, -1, -3}, {1, -1, -3}, {0, 1, -3}},
+        {0, 1, 2, 3, 4, 5});
     check(picker.pickTriangle(ordinal, forward) == 1, "triangle ordinal is not index offset");
-    SculptMesh degenerate = meshFrom("0 0 -2\n1 0 -2\n2 0 -2", "0 1 2");
+    SculptMesh degenerate = meshFromGeometry({{0, 0, -2}, {1, 0, -2}, {2, 0, -2}}, {0, 1, 2});
     check(!picker.pickTriangle(degenerate, forward), "degenerate triangle rejected");
-    SculptMesh reversed = meshFrom("-1 -1 -2\n0 1 -2\n1 -1 -2", "0 1 2");
+    SculptMesh reversed = meshFromGeometry({{-1, -1, -2}, {0, 1, -2}, {1, -1, -2}}, {0, 1, 2});
     check(picker.pickTriangle(reversed, forward) == 0, "back faces are pickable");
     SculptMesh invalid;
     check(!invalid.replaceFromText("0 0 0\n1 0 0", "0 1").success && !picker.pickTriangle(invalid, forward),
