@@ -228,7 +228,8 @@ private:
                 break;
             case sculpt::VeometriUi::FileAction::OpenDocument:
             {
-                const auto paths = pfd::open_file("Open geometry", "", {"Geometry files", "*.meshgeo"}).result();
+                const auto paths = pfd::open_file("Open geometry", "",
+                    {"Veometri Geometry (*.geo)", "*.geo", "Legacy Geometry (*.meshgeo)", "*.meshgeo"}).result();
                 if (!paths.empty()) m_tool->openDocument(paths.front());
                 break;
             }
@@ -252,11 +253,12 @@ private:
 
     void saveAs()
     {
-        auto selected = pfd::save_file("Save geometry", "untitled.meshgeo",
-            {"Geometry files", "*.meshgeo"}).result();
+        auto selected = pfd::save_file("Save geometry", "untitled.geo",
+            {"Veometri Geometry (*.geo)", "*.geo"}).result();
         if (selected.empty()) return;
         std::filesystem::path path(selected);
-        if (!path.has_extension()) path += ".meshgeo";
+        if (!path.has_extension()) path += ".geo";
+        else if (path.extension() != ".geo") path.replace_extension(".geo");
         m_tool->saveDocument(path);
     }
 

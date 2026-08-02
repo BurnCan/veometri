@@ -9,4 +9,4 @@
 - Package: `Veometri`
 - Installed data directory: `share/veometri`
 - Repository: `BurnCan/Veometri`
-- Portable file format: `.meshgeo` with the application-neutral `indexed-geometry` identifier
+- Portable file format: `.geo` with the application-neutral `veometri-geometry` identifier

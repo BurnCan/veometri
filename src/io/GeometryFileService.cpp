@@ -25,16 +25,25 @@ GeometryFileService::LoadResult GeometryFileService::load(const std::filesystem:
     input.read(text.data(), static_cast<std::streamsize>(text.size()));
     if (!input && !input.eof()) return {false, {}, "Could not read complete geometry file."};
     auto decoded = GeometryFileFormat::decode(text);
-    return {decoded.success, std::move(decoded.mesh), std::move(decoded.error)};
+    if (!decoded.success) return {false, {}, std::move(decoded.error)};
+    std::vector<glm::vec3> positions;
+    positions.reserve(decoded.geometry.vertices.size());
+    for (const auto& vertex : decoded.geometry.vertices) positions.push_back(vertex.position);
+    auto created = sculpt::SculptMesh::create(std::move(positions), std::move(decoded.geometry.indices));
+    return {created.success, std::move(created.mesh), std::move(created.error)};
 }
 
 GeometryFileService::SaveResult GeometryFileService::save(
     const std::filesystem::path& path, const sculpt::SculptMesh& mesh)
 {
+    auto destination = path;
+    if (!destination.has_extension()) destination += ".geo";
+    else if (destination.extension() != ".geo")
+        return {false, "Geometry save path must use the .geo extension."};
     std::string text;
-    try { text = GeometryFileFormat::encode(mesh); }
+    try { text = GeometryFileFormat::encode(buildGeometryData(mesh)); }
     catch (const std::exception& error) { return {false, error.what()}; }
-    auto temporary = path;
+    auto temporary = destination;
     temporary += ".tmp";
     std::error_code filesystemError;
     std::filesystem::remove(temporary, filesystemError);
@@ -58,7 +67,7 @@ GeometryFileService::SaveResult GeometryFileService::save(
     }
     // POSIX rename replaces atomically. On platforms that reject replacement,
     // retain the valid destination rather than deleting it first.
-    std::filesystem::rename(temporary, path, filesystemError);
+    std::filesystem::rename(temporary, destination, filesystemError);
     if (filesystemError)
     {
         std::filesystem::remove(temporary, filesystemError);

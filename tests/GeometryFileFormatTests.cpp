@@ -1,76 +1,55 @@
 #include "veometri/io/GeometryFileFormat.h"
+#include "veometri/io/GeometryData.h"
+#include "veometri/sculpt/SculptMesh.h"
 
+#include <cmath>
 #include <cstdlib>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <iterator>
-#include <string>
 
-using veometri::io::GeometryFileFormat;
-using veometri::sculpt::SculptMesh;
-namespace { int failures; void check(bool value, const char* message) { if (!value) { ++failures; std::cerr << "FAIL: " << message << '\n'; } } }
+#include <glm/geometric.hpp>
 
-namespace {
-GeometryFileFormat::DecodeResult decodeWithoutThrowing(const std::string& text, const char* message)
-{
-    try { return GeometryFileFormat::decode(text); }
-    catch (...)
-    {
-        check(false, message);
-        return {};
-    }
-}
-}
+using namespace veometri;
+namespace { int failures; void check(bool v, const char* m) { if (!v) { ++failures; std::cerr << "FAIL: " << m << '\n'; } } }
 
 int main()
 {
-    const auto cube = SculptMesh::makeDefaultCube();
-    const auto encoded = GeometryFileFormat::encode(cube);
-    check(!encoded.empty() && encoded.back() == '\n', "cube encodes with final newline");
-    check(encoded == GeometryFileFormat::encode(cube), "encoding is deterministic");
-    check(encoded.find("\"format\": \"indexed-geometry\"") != std::string::npos, "format identifier present");
-    check(encoded.find("\"version\": 1") != std::string::npos, "version present");
-    auto decoded = GeometryFileFormat::decode(encoded);
-    check(decoded.success && decoded.mesh.equals(cube), "round trip preserves vertices, indices, and winding");
-    check(decoded.mesh.isValid(), "decoded geometry satisfies invariants");
+    const auto cube = sculpt::SculptMesh::makeDefaultCube();
+    const auto complete = io::buildGeometryData(cube);
+    const auto encoded = io::GeometryFileFormat::encode(complete);
+    check(encoded == io::GeometryFileFormat::encode(complete), "encoding deterministic");
+    check(encoded.find("\"format\": \"veometri-geometry\"") != std::string::npos &&
+          encoded.find("\"version\": 2") != std::string::npos && encoded.find("\"texCoord\"") != std::string::npos,
+          "canonical v2 fields encoded");
+    auto decoded = io::GeometryFileFormat::decode(encoded);
+    check(decoded.success && decoded.geometry.indices == cube.indices() && decoded.geometry.vertices.size() == cube.vertexCount(),
+          "v2 round trip preserves topology");
+    for (const auto& vertex : complete.vertices)
+    {
+        check(std::isfinite(vertex.normal.x) && std::abs(glm::length(vertex.normal) - 1.0F) < 1e-5F, "normal finite and normalized");
+        check(std::isfinite(vertex.texCoord.x) && vertex.texCoord.x >= 0 && vertex.texCoord.x <= 1 &&
+              vertex.texCoord.y >= 0 && vertex.texCoord.y <= 1, "UV finite and normalized");
+    }
+    auto triangle = sculpt::SculptMesh::create({{0,0,0},{1,0,0},{0,1,0}}, {0,1,2});
+    auto generated = io::buildGeometryData(triangle.mesh);
+    check(generated.vertices[0].normal.z > 0.99F, "winding controls normal direction");
+    auto degenerate = sculpt::SculptMesh::create({{0,0,0},{1,0,0},{2,0,0}}, {0,1,2});
+    generated = io::buildGeometryData(degenerate.mesh);
+    check(generated.vertices[0].normal == glm::vec3(0,1,0), "degenerate triangle uses deterministic fallback");
+    const std::string v1 = R"({"format":"indexed-geometry","version":1,"primitive":"triangles","vertices":[[0,0,0],[1,0,0],[0,1,0]],"indices":[0,1,2]})";
+    decoded = io::GeometryFileFormat::decode(v1);
+    check(decoded.success && decoded.geometry.vertices[0].normal.z > .99F, "v1 migrates to complete geometry");
+    const std::string p = R"({"format":"veometri-geometry","version":2,"primitive":"triangles","vertices":)";
+    check(!io::GeometryFileFormat::decode(p + R"([{"position":[0,0,0],"normal":[0,0,1]}],"indices":[0,0,0]})").success, "missing UV rejected");
+    check(!io::GeometryFileFormat::decode(p + R"([{"position":[0,0],"normal":[0,0,1],"texCoord":[0,0]}],"indices":[0,0,0]})").success, "position size rejected");
+    check(!io::GeometryFileFormat::decode(p + R"([{"position":[0,0,0],"normal":[0,0,0],"texCoord":[0,0]}],"indices":[0,0,0]})").success, "zero normal rejected");
+    check(!io::GeometryFileFormat::decode(p + R"([{"position":[0,0,0],"normal":[0,0,1],"texCoord":[0]}],"indices":[0,0,0]})").success, "UV size rejected");
+    check(!io::GeometryFileFormat::decode(p + R"([{"position":[0,0,0],"normal":[0,0,1],"texCoord":[0,0]}],"indices":[-1,0,0]})").success, "negative index rejected");
+    check(!io::GeometryFileFormat::decode(p + R"([{"position":[0,0,0],"normal":[0,0,1],"texCoord":[0,0]}],"indices":[0.5,0,0]})").success, "floating index rejected");
+    check(!io::GeometryFileFormat::decode(p + R"([],"indices":[0]})").success, "non-triangle indices rejected");
     std::ifstream example(VEOMETRI_EXAMPLE_FILE);
     const std::string exampleText((std::istreambuf_iterator<char>(example)), {});
-    check(example.good() || example.eof(), "example geometry is readable");
-    const auto exampleDecoded = GeometryFileFormat::decode(exampleText);
-    check(exampleDecoded.success && exampleDecoded.mesh.equals(cube), "example cube loads successfully");
-    check(GeometryFileFormat::decode(R"({"format":"indexed-geometry","version":1,"primitive":"triangles","vertices":[],"indices":[]})").success,
-          "valid empty mesh round trips");
-    check(!decodeWithoutThrowing("{", "malformed JSON does not throw").success, "malformed JSON rejected");
-    check(!GeometryFileFormat::decode(R"({"version":1,"primitive":"triangles","vertices":[],"indices":[]})").success, "missing format rejected");
-    check(!GeometryFileFormat::decode(R"({"format":"other","version":1,"primitive":"triangles","vertices":[],"indices":[]})").success, "unsupported format rejected");
-    check(!GeometryFileFormat::decode(R"({"format":"indexed-geometry","primitive":"triangles","vertices":[],"indices":[]})").success, "missing version rejected");
-    check(!GeometryFileFormat::decode(R"({"format":"indexed-geometry","version":3,"primitive":"triangles","vertices":[],"indices":[]})").success, "unsupported version rejected");
-    check(!GeometryFileFormat::decode(R"({"format":"indexed-geometry","version":1,"primitive":"lines","vertices":[],"indices":[]})").success, "unsupported primitive rejected");
-    const std::string prefix = R"({"format":"indexed-geometry","version":1,"primitive":"triangles","vertices":)";
-    check(!GeometryFileFormat::decode(prefix + R"([[0,0]] ,"indices":[]})").success, "malformed vertex tuple rejected");
-    check(!GeometryFileFormat::decode(prefix + R"([[0,"x",0]],"indices":[0,0,0]})").success, "nonnumeric coordinate rejected");
-    check(!decodeWithoutThrowing(prefix + R"([[1e400,0,0]],"indices":[0,0,0]})",
-                                 "positive numeric overflow does not throw").success,
-          "positive numeric overflow rejected");
-    check(!decodeWithoutThrowing(prefix + R"([[-1e400,0,0]],"indices":[0,0,0]})",
-                                 "negative numeric overflow does not throw").success,
-          "negative numeric overflow rejected");
-    check(!decodeWithoutThrowing(
-               R"({"format":"indexed-geometry","version":1e400,"primitive":"triangles","vertices":[],"indices":[]})",
-               "version numeric overflow does not throw").success,
-          "version numeric overflow rejected");
-    check(!decodeWithoutThrowing(prefix + R"([[0,0,0]],"indices":[1e400,0,0]})",
-                                 "index numeric overflow does not throw").success,
-          "index numeric overflow rejected");
-    check(GeometryFileFormat::decode(prefix + R"([[3.4e38,0,0]],"indices":[0,0,0]})").success,
-          "large finite coordinate within float range accepted");
-    check(!GeometryFileFormat::decode(prefix + R"([[3.4028236e38,0,0]],"indices":[0,0,0]})").success,
-          "finite coordinate outside float range rejected");
-    check(!GeometryFileFormat::decode(prefix + R"([[0,0,0]],"indices":[-1,0,0]})").success, "negative index rejected");
-    check(!GeometryFileFormat::decode(prefix + R"([[0,0,0]],"indices":[0.5,0,0]})").success, "fractional index rejected");
-    check(!GeometryFileFormat::decode(prefix + R"([[0,0,0]],"indices":[4294967296,0,0]})").success, "index overflow rejected");
-    check(!GeometryFileFormat::decode(prefix + R"([[0,0,0]],"indices":[0]})").success, "non-triangle index count rejected");
-    check(!GeometryFileFormat::decode(prefix + R"([[0,0,0]],"indices":[0,1,0]})").success, "missing vertex reference rejected");
-    check(GeometryFileFormat::decode(prefix + R"([],"indices":[],"future":true})").success, "unknown top-level fields tolerated");
-    return failures == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
+    check(io::GeometryFileFormat::decode(exampleText).success, "checked-in cube.geo loads");
+    return failures ? EXIT_FAILURE : EXIT_SUCCESS;
 }

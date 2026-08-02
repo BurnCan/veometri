@@ -51,7 +51,7 @@ target_link_libraries(veometri_core PUBLIC glm::glm PRIVATE ${veometri_first_par
 
 add_library(Veometri::Core ALIAS veometri_core)
 
-add_library(veometri_io src/io/GeometryFileFormat.cpp src/io/GeometryFileService.cpp)
+add_library(veometri_io src/io/GeometryData.cpp src/io/GeometryFileFormat.cpp src/io/GeometryFileService.cpp)
 target_include_directories(veometri_io PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(veometri_io PUBLIC veometri_core PRIVATE nlohmann_json::nlohmann_json ${veometri_first_party})
 
@@ -97,7 +97,7 @@ if(BUILD_TESTING AND VEOMETRI_BUILD_TESTS)
     veometri_test(asset_locator_tests tests/AssetLocatorTests.cpp veometri_platform)
     target_compile_definitions(asset_locator_tests PRIVATE
         VEOMETRI_TEST_DEVELOPMENT_ASSET_ROOT="${PROJECT_SOURCE_DIR}/assets")
-    target_compile_definitions(geometry_file_format_tests PRIVATE VEOMETRI_EXAMPLE_FILE="${PROJECT_SOURCE_DIR}/examples/cube.meshgeo")
+    target_compile_definitions(geometry_file_format_tests PRIVATE VEOMETRI_EXAMPLE_FILE="${PROJECT_SOURCE_DIR}/examples/cube.geo")
     find_package(Python3 COMPONENTS Interpreter)
     if(Python3_Interpreter_FOUND)
         add_test(NAME standalone_independence COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/check_standalone_independence.py)
