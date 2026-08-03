@@ -13,6 +13,7 @@
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 
+#include <algorithm>
 #include <cstdlib>
 #include <filesystem>
 #include <memory>
@@ -86,7 +87,6 @@ private:
         m_imguiContextCreated = true;
 
         ImGui::StyleColorsDark();
-        ImGui::GetIO().FontGlobalScale = 3.2f;
 
         if (!ImGui_ImplGlfw_InitForOpenGL(m_window->nativeHandle(), true))
             throw std::runtime_error("Failed to initialize ImGui GLFW backend");
@@ -204,6 +204,7 @@ private:
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
+        updateUiScale(io);
         ImGui::NewFrame();
 
         processMenuAction(m_ui->renderMainMenuBar());
@@ -217,6 +218,22 @@ private:
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    }
+
+    static void updateUiScale(ImGuiIO& io)
+    {
+        constexpr float referenceWidth = 1280.0f;
+        constexpr float referenceHeight = 720.0f;
+        constexpr float minimumScale = 0.5f;
+        constexpr float maximumScale = 1.5f;
+
+        if (io.DisplaySize.x <= 0.0f || io.DisplaySize.y <= 0.0f)
+            return;
+
+        const float widthScale = io.DisplaySize.x / referenceWidth;
+        const float heightScale = io.DisplaySize.y / referenceHeight;
+        io.FontGlobalScale = std::clamp(
+            std::min(widthScale, heightScale), minimumScale, maximumScale);
     }
 
     void processMenuAction(sculpt::VeometriUi::FileAction action)
