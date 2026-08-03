@@ -19,7 +19,7 @@ languages without a JSON parser. Existing `.geo` and `.meshgeo` files remain rea
 It provides OpenGL rendering, an FPS camera, vertex/triangle picking, vertex dragging, triangle deletion, editable geometry text, and New/Open/Save/Save As.
 
 <p align="center">
-  <img src="assets/Screenshot1.png" alt="Veometri application screenshot" width="800">
+  <img src="assets/veometridemo.gif" alt="Veometri application demo" width="800">
 </p>
 
 ## Platforms and prerequisites
