@@ -23,8 +23,8 @@ int main() {
                            {{-0.5F, -0.5F, 0.0F}, {0.0F, 0.0F, 1.0F}, {0.0F, 0.0F}},
                            {{0.5F, -0.5F, 0.0F}, {0.0F, 0.0F, 1.0F}, {1.0F, 0.0F}}},
                           {0, 1, 2}};
-    const std::string golden = "// positions          // normals           // texcoords\n"
-                               "{\n"
+    const std::string golden = "{\n"
+                               " // positions          // normals           // texcoords\n"
                                "    0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.5f, 1.0f,\n"
                                "    -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,\n"
                                "    0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f\n"

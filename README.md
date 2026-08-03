@@ -61,8 +61,8 @@ declarations). The first has one vertex per line and a stride of 8 floats in
 `uint32`-compatible indices, with one triangle per line. For example:
 
 ```cpp
-// positions          // normals           // texcoords
 {
+ // positions          // normals           // texcoords
     0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.5f, 1.0f,
     -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
     0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f

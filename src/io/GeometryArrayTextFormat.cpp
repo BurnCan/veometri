@@ -35,7 +35,7 @@ std::string GeometryArrayTextFormat::encode(const GeometryData &geometry) {
             throw std::invalid_argument("Index " + std::to_string(i) +
                                         " references a missing vertex.");
 
-    std::string output = "// positions          // normals           // texcoords\n{\n";
+    std::string output = "{\n // positions          // normals           // texcoords\n";
     for (std::size_t i = 0; i < geometry.vertices.size(); ++i) {
         const auto &vertex = geometry.vertices[i];
         const float values[] = {vertex.position.x, vertex.position.y, vertex.position.z,
