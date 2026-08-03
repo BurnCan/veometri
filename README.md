@@ -1,5 +1,9 @@
 # Veometri
 
+<p align="center">
+  <img src="assets/veometri%20logo%20transparentgreen.png" alt="Veometri logo" width="250">
+</p>
+
 A real-time visual authoring tool for indexed 3D geometry.
 
 Veometri is a real-time visual authoring tool for indexed 3D geometry. Veometri lets users create, edit, preview, save, and load indexed 3D geometry through direct vertex and triangle-index manipulation.
@@ -12,7 +16,11 @@ languages without a JSON parser. Existing `.geo` and `.meshgeo` files remain rea
 
 ## Capabilities
 
-It provides OpenGL rendering, an FPS camera, vertex/triangle picking, vertex dragging, triangle deletion, editable geometry text, and New/Open/Save/Save As. No screenshot is currently checked in.
+It provides OpenGL rendering, an FPS camera, vertex/triangle picking, vertex dragging, triangle deletion, editable geometry text, and New/Open/Save/Save As.
+
+<p align="center">
+  <img src="assets/Screenshot1.png" alt="Veometri application screenshot" width="800">
+</p>
 
 ## Platforms and prerequisites
 
