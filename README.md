@@ -1,5 +1,9 @@
 # Veometri
 
+<p align="center">
+  <img src="assets/veometri%20logo%20transparentgreen.png" alt="Veometri logo" width="220">
+</p>
+
 A real-time visual authoring tool for indexed 3D geometry.
 
 Veometri is a real-time visual authoring tool for indexed 3D geometry. Veometri lets users create, edit, preview, save, and load indexed 3D geometry through direct vertex and triangle-index manipulation.
